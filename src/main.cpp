@@ -415,7 +415,7 @@ int main(int argc, char** argv) {
       out << ":'(" << std::endl;
       out.close();
     } else {
-      std::cout << "Error: failed to write to " << args::get(outputLogFilename) << vendl;
+      std::cout << "Error: failed to write to " << logFile << std::endl;
     }
   }
 
