@@ -141,6 +141,7 @@ def main():
             operation_flag,
             f"--outputPrefix={output_prefix}_",
             "--logStats",
+            "--triangulateInput",
             "--noGUI"
         ]
 
