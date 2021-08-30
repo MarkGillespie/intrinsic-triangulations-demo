@@ -402,6 +402,23 @@ int main(int argc, char** argv) {
   useInsertionsMax = insertionsMax != 0;
   outputPrefix = args::get(outputPrefixArg);
 
+  if (logStats) {
+    // output a temporary symbol so we can tell if the program
+    // crashes before writing the real log
+
+    std::string logFile = outputPrefix + "stats.tsv";
+    std::ofstream out;
+
+    // std::ios::trunc ensures that we overwrite old versions
+    out.open(logFile, std::ios::trunc);
+    if (out.is_open()) {
+      out << ":'(" << std::endl;
+      out.close();
+    } else {
+      std::cout << "Error: failed to write to " << args::get(outputLogFilename) << vendl;
+    }
+  }
+
   if (backendFlag) {
     if (args::get(backendFlag) == "signpost") {
       backend = "Signposts";
