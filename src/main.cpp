@@ -96,7 +96,12 @@ void flipDelaunayTriangulation() {
 void refineDelaunayTriangulation() {
 
   if (mesh->hasBoundary()) {
-    polyscope::error("Support for refining meshes with boundary is experimental; proceed with caution!");
+    // TODO: get rid of this message?
+    if (withGUI) {
+      polyscope::error("Support for refining meshes with boundary is experimental; proceed with caution!");
+    } else {
+      std::cout << "Support for refining meshes with boundary is experimental; proceed with caution!" << std::endl;
+    }
   }
 
   // Manage optional parameters
