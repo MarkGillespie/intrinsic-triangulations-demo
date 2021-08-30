@@ -151,7 +151,7 @@ def main():
         print(f"Achieved Delaunay on {n_delaunay} of {n_total} meshes ({n_delaunay/n_total*100.}%)")
     elif args.operation == "refineDelaunay":
         angleBound = 25
-        df['refinementSucceeded'] = df['outputMinAngleDeg'] >= angleBound
+        df['refinementSucceeded'] = df['outputMinValidAngleDeg'] >= angleBound
         n_good = df['refinementSucceeded'].sum()
         print(f"Achieved {angleBound} degree angle bound on {n_good} of {n_total} meshes ({n_good/n_total*100.}%)")
 

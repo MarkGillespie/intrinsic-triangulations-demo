@@ -494,6 +494,7 @@ int main(int argc, char** argv) {
     logger.log("inputVertices", mesh->nVertices());
     logger.log("inputIsDelaunay", intTri->isDelaunay());
     logger.log("inputMinAngleDeg", intTri->minAngleDegrees());
+    logger.log("inputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
   }
 
   GC_SAFETY_ASSERT(intTri->intrinsicMesh->isTriangular(), "mesh not triangular?!");
@@ -522,6 +523,7 @@ int main(int argc, char** argv) {
     logger.log("outputVertices", intTri->intrinsicMesh->nVertices());
     logger.log("outputIsDelaunay", intTri->isDelaunay());
     logger.log("outputMinAngleDeg", intTri->minAngleDegrees());
+    logger.log("outputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
 
     std::string logFile = outputPrefix + "stats.tsv";
     bool loggingSuccess = logger.writeLog(logFile);
