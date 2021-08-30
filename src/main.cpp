@@ -383,7 +383,7 @@ int main(int argc, char** argv) {
   // Parse args
   try {
     parser.ParseCLI(argc, argv);
-  } catch (args::Help) {
+  } catch (const args::Help& h) {
     std::cout << parser;
     return 0;
   } catch (const args::ParseError& e) {
