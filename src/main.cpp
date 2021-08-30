@@ -362,6 +362,7 @@ int main(int argc, char** argv) {
   args::ValueFlag<int> refineMaxInsertions(triangulation, "refineMaxInsertions",
       "Maximum number of insertions during refinement. Use 0 for no max, or negative values to scale by number of vertices. Default: 10 * nVerts",
       {"refineMaxInsertions"}, -10);
+  args::Flag triangulateInput(triangulation, "triangulateInput", "Triangulate non-triangular faces of input", {"triangulateInput"});
 
   args::Group output(parser, "ouput");
   args::Flag noGUI(output, "noGUI", "exit after processing and do not open the GUI", {"noGUI"});
@@ -434,6 +435,11 @@ int main(int argc, char** argv) {
   // Load mesh
   std::tie(mesh, geometry) = readManifoldSurfaceMesh(args::get(inputFilename));
 
+  if (triangulateInput && !mesh->isTriangular()) {
+    std::cout << "triangulating faces..." << std::endl;
+    for (Face f : mesh->faces()) mesh->triangulate(f);
+  }
+
   // Sale max insertions by number of vertices if needed
   if (insertionsMax < 0) {
     insertionsMax *= -mesh->nVertices();
@@ -485,6 +491,7 @@ int main(int argc, char** argv) {
     logger.log("inputMinAngleDeg", intTri->minAngleDegrees());
   }
 
+  GC_SAFETY_ASSERT(intTri->intrinsicMesh->isTriangular(), "mesh not triangular?!");
   // Perform any operations requested
   if (flipDelaunay) {
     std::clock_t start = std::clock();
