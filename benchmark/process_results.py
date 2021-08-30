@@ -155,5 +155,10 @@ def main():
         n_good = df['refinementSucceeded'].sum()
         print(f"Achieved {angleBound} degree angle bound on {n_good} of {n_total} meshes ({n_good/n_total*100.}%)")
 
+        if args.record_files:
+            unrefined_meshes = df[df['refinementSucceeded'] == False]['name']
+            with open("unrefined_meshes", "w") as f:
+                f.write("\n".join(map(str, unrefined_meshes)))
+
 if __name__ == "__main__":
     main()
