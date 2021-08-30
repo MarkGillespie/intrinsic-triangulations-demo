@@ -353,6 +353,7 @@ int main(int argc, char** argv) {
   args::Positional<std::string> inputFilename(parser, "mesh", "A .obj or .ply mesh file.");
 
   args::Group triangulation(parser, "triangulation");
+  args::ValueFlag<std::string> backendFlag(triangulation, "backend", "Data structure to use (signpost or integer)", {"backend"});
   args::Flag flipDelaunay(triangulation, "flipDelaunay", "Flip edges to make the mesh intrinsic Delaunay", {"flipDelaunay"});
   args::Flag refineDelaunay(triangulation, "refineDelaunay", "Refine and flip edges to make the mesh intrinsic Delaunay and satisfy angle/size bounds", {"refineDelaunay"});
   args::ValueFlag<double> refineAngle(triangulation, "refineAngle", "Minimum angle threshold (in degrees). Default: 25.", {"refineAngle"}, 25.);
@@ -398,6 +399,18 @@ int main(int argc, char** argv) {
   insertionsMax = args::get(refineMaxInsertions);
   useInsertionsMax = insertionsMax != 0;
   outputPrefix = args::get(outputPrefixArg);
+
+  if (backendFlag) {
+    if (args::get(backendFlag) == "signpost") {
+      backend = "Signposts";
+    } else if (args::get(backendFlag) == "integer") {
+      backend = "Integer Coordinates";
+    } else {
+      std::cout << "Error: unrecognized backend '" << args::get(backendFlag) << "'. Please use 'signpost' or 'integer'"
+                << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
 
   // Load mesh
   std::tie(mesh, geometry) = readManifoldSurfaceMesh(args::get(inputFilename));
