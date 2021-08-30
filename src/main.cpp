@@ -11,6 +11,7 @@
 
 #include "args/args.hxx"
 #include "imgui.h"
+#include "logger.h"
 
 #include <sstream>
 
@@ -369,6 +370,7 @@ int main(int argc, char** argv) {
   args::Flag vertexPositions(output, "vertexPositions", "write the vertex positions for the intrinsic triangulation. name: 'vertexPositions.dmat'", {"vertexPositions"});
   args::Flag laplaceMat(output, "laplaceMat", "write the Laplace-Beltrami matrix for the triangulation. name: 'laplace.spmat'", {"laplaceMat"});
   args::Flag interpolateMat(output, "interpolateMat", "write the matrix which expresses data on the intrinsic vertices as a linear combination of the input vertices. name: 'interpolate.mat'", {"interpolateMat"});
+  args::Flag logStats(output, "logStats", "write performance statistics. name: 'stats.tsv'", {"logStats"});
   // clang-format on
 
 
@@ -454,19 +456,50 @@ int main(int argc, char** argv) {
     psMesh->setEdgeWidth(1.0);
   }
 
+  Logger logger;
 
   // Initialize triangulation
   resetTriangulation();
 
+  if (logStats) {
+    logger.log("name", polyscope::guessNiceNameFromPath(args::get(inputFilename)));
+    logger.log("inputVertices", mesh->nVertices());
+    logger.log("inputIsDelaunay", intTri->isDelaunay());
+    logger.log("inputMinAngleDeg", intTri->minAngleDegrees());
+  }
+
   // Perform any operations requested
-  if (flipDelaunay) flipDelaunayTriangulation();
-  if (refineDelaunay) refineDelaunayTriangulation();
+  if (flipDelaunay) {
+    std::clock_t start = std::clock();
+    flipDelaunayTriangulation();
+    double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    if (logStats) logger.log("flippingDuration", duration);
+  }
+
+  if (refineDelaunay) {
+    std::clock_t start = std::clock();
+    refineDelaunayTriangulation();
+    double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    if (logStats) logger.log("refinementDuration", duration);
+  }
 
   // Generate any outputs
   if (intrinsicFaces) outputIntrinsicFaces();
   if (vertexPositions) outputVertexPositions();
   if (laplaceMat) outputLaplaceMat();
   if (interpolateMat) outputInterpolatMat();
+
+  if (logStats) {
+    logger.log("outputVertices", intTri->intrinsicMesh->nVertices());
+    logger.log("outputIsDelaunay", intTri->isDelaunay());
+    logger.log("outputMinAngleDeg", intTri->minAngleDegrees());
+
+    std::string logFile = outputPrefix + "stats.tsv";
+    bool loggingSuccess = logger.writeLog(logFile);
+    if (!loggingSuccess) {
+      throw std::runtime_error("failed to write logs to " + logFile);
+    }
+  }
 
   // Give control to the polyscope gui
   if (withGUI) {

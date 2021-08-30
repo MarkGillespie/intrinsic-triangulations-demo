@@ -65,7 +65,8 @@ add_subdirectory(deps/polyscope)
 
 # == Build our project stuff
 
-set(SRCS 
+set(SRCS
+  src/logger.cpp
   src/main.cpp
 	# add any other source files here
 )
