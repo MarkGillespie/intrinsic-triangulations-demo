@@ -13,6 +13,7 @@
 #include "imgui.h"
 #include "logger.h"
 
+#include <ctime>
 #include <sstream>
 
 using namespace geometrycentral;
