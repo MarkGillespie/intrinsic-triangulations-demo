@@ -359,8 +359,8 @@ int main(int argc, char** argv) {
   args::Flag refineDelaunay(triangulation, "refineDelaunay", "Refine and flip edges to make the mesh intrinsic Delaunay and satisfy angle/size bounds", {"refineDelaunay"});
   args::ValueFlag<double> refineAngle(triangulation, "refineAngle", "Minimum angle threshold (in degrees). Default: 25.", {"refineAngle"}, 25.);
   args::ValueFlag<double> refineSizeCircum(triangulation, "refineSizeCircum", "Maximum triangle size, set by specifying the circumradius. Default: inf", {"refineSizeCircum"}, std::numeric_limits<double>::infinity());
-  args::ValueFlag<int> refineMaxInsertions(triangulation, "refineMaxInsertions", 
-      "Maximum number of insertions during refinement. Use 0 for no max, or negative values to scale by number of vertices. Default: 10 * nVerts", 
+  args::ValueFlag<int> refineMaxInsertions(triangulation, "refineMaxInsertions",
+      "Maximum number of insertions during refinement. Use 0 for no max, or negative values to scale by number of vertices. Default: 10 * nVerts",
       {"refineMaxInsertions"}, -10);
 
   args::Group output(parser, "ouput");
