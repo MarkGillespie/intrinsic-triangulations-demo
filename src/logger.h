@@ -24,6 +24,9 @@ public:
   void writeLog(std::ostream& out);
 
 protected:
+  void logString(std::string name, std::string val);
+  void logDouble(std::string name, double val);
+
   std::vector<std::tuple<std::string, LogType, size_t>> logs;
   std::vector<std::string> stringLogs;
   std::vector<double> doubleLogs;

@@ -22,6 +22,7 @@ using namespace geometrycentral::surface;
 std::unique_ptr<ManifoldSurfaceMesh> mesh;
 std::unique_ptr<VertexPositionGeometry> geometry;
 std::unique_ptr<IntrinsicTriangulation> intTri;
+std::unique_ptr<CommonSubdivision> cs;
 
 // Polyscope visualization handle, to quickly add data to the surface
 bool withGUI = true;
@@ -122,7 +123,7 @@ void refineDelaunayTriangulation() {
 }
 
 void computeCommonSubdivision() {
-  std::unique_ptr<CommonSubdivision> cs = intTri->extractCommonSubdivision();
+  cs = intTri->extractCommonSubdivision();
   if (withGUI) {
     // TODO: visualize
   }
@@ -528,8 +529,10 @@ int main(int argc, char** argv) {
     logger.log("outputMinAngleDeg", intTri->minAngleDegrees());
     logger.log("outputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
 
-    if (performedOperation) { // log dummy value in case we time out
+    if (performedOperation) {
+      // log dummy value in case we time out
       logger.log("commonSubdivisionDuration", -1);
+      logger.log("commonSubdivisionVertices", -1);
     }
 
     std::string logFile = outputPrefix + "stats.tsv";
@@ -543,7 +546,22 @@ int main(int argc, char** argv) {
     std::clock_t start = std::clock();
     computeCommonSubdivision();
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
-    if (logStats) logger.log("commonSubdivisionDuration", duration);
+    if (logStats) {
+      logger.log("commonSubdivisionDuration", duration);
+
+      // count vertices in common subdivision
+      size_t nV = cs->meshB.nVertices();
+      for (Edge eB : cs->meshB.edges()) {
+        if (cs->pointsAlongB[eB].size() == 3 &&
+            cs->pointsAlongB[eB][1]->intersectionType == CSIntersectionType::EDGE_PARALLEL) {
+          nV += 0; // shared edge
+        } else {
+          nV += (cs->pointsAlongB[eB].size() - 2);
+        }
+      }
+
+      logger.log("commonSubdivisionVertices", nV);
+    }
   }
 
   // Generate any outputs

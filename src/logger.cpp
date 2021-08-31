@@ -14,35 +14,54 @@ Logger::Logger() {}
 
 template <>
 void Logger::log(std::string name, const char* val) {
-  log(name, std::string(val));
+  logString(name, std::string(val));
 }
 
 template <>
 void Logger::log(std::string name, std::string val) {
-  logs.push_back(std::make_tuple(name, LogType::STRING, stringLogs.size()));
-  stringLogs.push_back(val);
+  logString(name, val);
 }
 
 template <>
 void Logger::log(std::string name, bool val) {
-  logs.push_back(std::make_tuple(name, LogType::STRING, stringLogs.size()));
-  stringLogs.push_back(val ? "True" : "False");
+  logString(name, val ? "True" : "False");
 }
 
 template <>
 void Logger::log(std::string name, double val) {
-  logs.push_back(std::make_tuple(name, LogType::DOUBLE, doubleLogs.size()));
-  doubleLogs.push_back(val);
+  logDouble(name, val);
 }
 
 template <>
 void Logger::log(std::string name, size_t val) {
-  logs.push_back(std::make_tuple(name, LogType::DOUBLE, doubleLogs.size()));
-  doubleLogs.push_back(val);
+  logDouble(name, val);
 }
 
 template <>
 void Logger::log(std::string name, int val) {
+  logDouble(name, val);
+}
+
+void Logger::logString(std::string name, std::string val) {
+  // Try to update an existing field
+  for (const std::tuple<std::string, LogType, size_t>& log : logs) {
+    if (std::get<0>(log) == name && std::get<1>(log) == LogType::STRING) {
+      stringLogs[std::get<2>(log)] = val;
+      return;
+    }
+  }
+
+  logs.push_back(std::make_tuple(name, LogType::STRING, stringLogs.size()));
+  stringLogs.push_back(val);
+}
+void Logger::logDouble(std::string name, double val) {
+  // Try to update an existing field
+  for (const std::tuple<std::string, LogType, size_t>& log : logs) {
+    if (std::get<0>(log) == name && std::get<1>(log) == LogType::DOUBLE) {
+      doubleLogs[std::get<2>(log)] = val;
+      return;
+    }
+  }
   logs.push_back(std::make_tuple(name, LogType::DOUBLE, doubleLogs.size()));
   doubleLogs.push_back(val);
 }
