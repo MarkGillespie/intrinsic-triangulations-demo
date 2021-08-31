@@ -155,6 +155,10 @@ def main():
         n_good = df['refinementSucceeded'].sum()
         print(f"Achieved {angleBound} degree angle bound on {n_good} of {n_total} meshes ({n_good/n_total*100.}%)")
 
+        df['extractionSucceeded'] = df['commonSubdivisionVertices'] > 0
+        n_good_extraction = df['extractionSucceeded'].sum()
+        print(f"extraced common refinement {n_good_extraction} of {n_total} meshes ({n_good_extraction/n_total*100.}%)")
+
         if args.record_files:
             unrefined_meshes = df[df['refinementSucceeded'] == False]['name']
             with open("unrefined_meshes", "w") as f:
