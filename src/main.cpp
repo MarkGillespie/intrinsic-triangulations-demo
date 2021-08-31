@@ -121,6 +121,13 @@ void refineDelaunayTriangulation() {
   updateTriagulationViz();
 }
 
+void computeCommonSubdivision() {
+  std::unique_ptr<CommonSubdivision> cs = intTri->extractCommonSubdivision();
+  if (withGUI) {
+    // TODO: visualize
+  }
+}
+
 template <typename T>
 void saveMatrix(std::string filename, SparseMatrix<T>& matrix) {
 
@@ -497,13 +504,14 @@ int main(int argc, char** argv) {
     logger.log("inputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
   }
 
-  GC_SAFETY_ASSERT(intTri->intrinsicMesh->isTriangular(), "mesh not triangular?!");
   // Perform any operations requested
+  bool performedOperation = false;
   if (flipDelaunay) {
     std::clock_t start = std::clock();
     flipDelaunayTriangulation();
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) logger.log("flippingDuration", duration);
+    performedOperation = true;
   }
 
   if (refineDelaunay) {
@@ -511,6 +519,31 @@ int main(int argc, char** argv) {
     refineDelaunayTriangulation();
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) logger.log("refinementDuration", duration);
+    performedOperation = true;
+  }
+
+  if (logStats) {
+    logger.log("outputVertices", intTri->intrinsicMesh->nVertices());
+    logger.log("outputIsDelaunay", intTri->isDelaunay());
+    logger.log("outputMinAngleDeg", intTri->minAngleDegrees());
+    logger.log("outputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
+
+    if (performedOperation) { // log dummy value in case we time out
+      logger.log("commonSubdivisionDuration", -1);
+    }
+
+    std::string logFile = outputPrefix + "stats.tsv";
+    bool loggingSuccess = logger.writeLog(logFile);
+    if (!loggingSuccess) {
+      throw std::runtime_error("failed to write logs to " + logFile);
+    }
+  }
+
+  if (performedOperation) {
+    std::clock_t start = std::clock();
+    computeCommonSubdivision();
+    double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    if (logStats) logger.log("commonSubdivisionDuration", duration);
   }
 
   // Generate any outputs
@@ -520,11 +553,6 @@ int main(int argc, char** argv) {
   if (interpolateMat) outputInterpolatMat();
 
   if (logStats) {
-    logger.log("outputVertices", intTri->intrinsicMesh->nVertices());
-    logger.log("outputIsDelaunay", intTri->isDelaunay());
-    logger.log("outputMinAngleDeg", intTri->minAngleDegrees());
-    logger.log("outputMinValidAngleDeg", intTri->minAngleDegreesAtValidFaces(60));
-
     std::string logFile = outputPrefix + "stats.tsv";
     bool loggingSuccess = logger.writeLog(logFile);
     if (!loggingSuccess) {
