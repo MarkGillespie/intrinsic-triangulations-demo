@@ -142,7 +142,8 @@ def main():
             f"--outputPrefix={output_prefix}_",
             "--logStats",
             "--triangulateInput",
-            "--noGUI"
+            "--noGUI",
+            "--refineMaxInsertions=0",
         ]
 
         # build the command
