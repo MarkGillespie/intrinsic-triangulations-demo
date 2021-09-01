@@ -554,19 +554,7 @@ int main(int argc, char** argv) {
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) {
       logger.log("commonSubdivisionTracingDuration", duration);
-
-      // count vertices in common subdivision
-      size_t nV = cs->meshB.nVertices();
-      for (Edge eB : cs->meshB.edges()) {
-        if (cs->pointsAlongB[eB].size() == 3 &&
-            cs->pointsAlongB[eB][1]->intersectionType == CSIntersectionType::EDGE_PARALLEL) {
-          nV += 0; // shared edge
-        } else {
-          nV += (cs->pointsAlongB[eB].size() - 2);
-        }
-      }
-
-      logger.log("commonSubdivisionVertices", nV);
+      logger.log("commonSubdivisionVertices", cs->nVertices());
       writeLog(logger, outputPrefix);
     }
 
