@@ -120,13 +120,16 @@ void refineDelaunayTriangulation() {
   }
 
   updateTriagulationViz();
+  std::cout << "\t...done" << std::endl;
 }
 
 void computeCommonSubdivision() {
+  std::cout << "Computing common subdivision" << std::endl;
   cs = intTri->extractCommonSubdivision();
   if (withGUI) {
     // TODO: visualize
   }
+  std::cout << "\t...done" << std::endl;
 }
 
 template <typename T>
@@ -560,7 +563,9 @@ int main(int argc, char** argv) {
 
     // extract mesh of common subdivision
     start = std::clock();
+    std::cout << "Constructing common subdivision mesh" << std::endl;
     cs->constructMesh();
+    std::cout << "\t...done" << std::endl;
     duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) {
       logger.log("commonSubdivisionMeshingDuration", duration);
