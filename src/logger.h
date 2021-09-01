@@ -20,8 +20,8 @@ public:
   template <typename T>
   void log(std::string name, T val);
 
-  bool writeLog(std::string filename);
-  void writeLog(std::ostream& out);
+  bool writeLog(std::string filename) const;
+  void writeLog(std::ostream& out) const;
 
 protected:
   void logString(std::string name, std::string val);

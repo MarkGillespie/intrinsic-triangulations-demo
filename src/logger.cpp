@@ -66,7 +66,7 @@ void Logger::logDouble(std::string name, double val) {
   doubleLogs.push_back(val);
 }
 
-bool Logger::writeLog(std::string filename) {
+bool Logger::writeLog(std::string filename) const {
   std::ofstream out;
 
   // std::ios::trunc ensures that we overwrite anything previously in the file
@@ -80,7 +80,7 @@ bool Logger::writeLog(std::string filename) {
   }
 }
 
-void Logger::writeLog(std::ostream& out) {
+void Logger::writeLog(std::ostream& out) const {
   out << std::setw(12);
   size_t N = logs.size();
   for (size_t iL = 0; iL + 1 < N; ++iL) {

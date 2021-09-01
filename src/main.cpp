@@ -289,6 +289,14 @@ void outputInterpolatMat() {
   saveMatrix("interpolate.spmat", interpMat);
 }
 
+void writeLog(const Logger& logger, std::string outputPrefix) {
+  std::string logFile = outputPrefix + "stats.tsv";
+  bool loggingSuccess = logger.writeLog(logFile);
+  if (!loggingSuccess) {
+    throw std::runtime_error("failed to write logs to " + logFile);
+  }
+}
+
 void myCallback() {
 
   ImGui::PushItemWidth(100);
@@ -531,23 +539,21 @@ int main(int argc, char** argv) {
 
     if (performedOperation) {
       // log dummy value in case we time out
-      logger.log("commonSubdivisionDuration", -1);
+      logger.log("commonSubdivisionTracingDuration", -1);
+      logger.log("commonSubdivisionMeshingDuration", -1);
       logger.log("commonSubdivisionVertices", -1);
     }
 
-    std::string logFile = outputPrefix + "stats.tsv";
-    bool loggingSuccess = logger.writeLog(logFile);
-    if (!loggingSuccess) {
-      throw std::runtime_error("failed to write logs to " + logFile);
-    }
+    if (logStats) writeLog(logger, outputPrefix);
   }
 
   if (performedOperation) {
+    // compute common subdivision
     std::clock_t start = std::clock();
     computeCommonSubdivision();
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) {
-      logger.log("commonSubdivisionDuration", duration);
+      logger.log("commonSubdivisionTracingDuration", duration);
 
       // count vertices in common subdivision
       size_t nV = cs->meshB.nVertices();
@@ -561,6 +567,16 @@ int main(int argc, char** argv) {
       }
 
       logger.log("commonSubdivisionVertices", nV);
+      writeLog(logger, outputPrefix);
+    }
+
+    // extract mesh of common subdivision
+    start = std::clock();
+    cs->constructMesh();
+    duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
+    if (logStats) {
+      logger.log("commonSubdivisionMeshingDuration", duration);
+      writeLog(logger, outputPrefix);
     }
   }
 
@@ -570,13 +586,7 @@ int main(int argc, char** argv) {
   if (laplaceMat) outputLaplaceMat();
   if (interpolateMat) outputInterpolatMat();
 
-  if (logStats) {
-    std::string logFile = outputPrefix + "stats.tsv";
-    bool loggingSuccess = logger.writeLog(logFile);
-    if (!loggingSuccess) {
-      throw std::runtime_error("failed to write logs to " + logFile);
-    }
-  }
+  if (logStats) writeLog(logger, outputPrefix);
 
   // Give control to the polyscope gui
   if (withGUI) {
