@@ -163,6 +163,9 @@ def main():
             unrefined_meshes = df[df['refinementSucceeded'] == False]['name']
             with open("unrefined_meshes", "w") as f:
                 f.write("\n".join(map(str, unrefined_meshes)))
+            unmeshed_meshes = df[df['extractionSucceeded'] == False]['name']
+            with open("unmeshed_meshes", "w") as f:
+                f.write("\n".join(map(str, unmeshed_meshes)))
 
 if __name__ == "__main__":
     main()
