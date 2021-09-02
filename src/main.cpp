@@ -3,6 +3,7 @@
 #include "geometrycentral/surface/meshio.h"
 #include "geometrycentral/surface/signpost_intrinsic_triangulation.h"
 #include "geometrycentral/surface/surface_centers.h"
+#include "geometrycentral/surface/transfer_functions.h"
 #include "geometrycentral/surface/vertex_position_geometry.h"
 
 #include "polyscope/point_cloud.h"
@@ -193,6 +194,38 @@ void testInterpolation() {
             << (interp_fn_B.toVector() - vec_interp_B).norm() << std::endl;
 
   geometry->unrequireEdgeLengths();
+}
+
+void testFunctionTransfer() {
+  if (!cs) computeCommonSubdivision();
+  if (!cs->mesh) {
+    std::cout << "Meshing common subdivision" << std::endl;
+    cs->constructMesh();
+    std::cout << "\t...done" << std::endl;
+  }
+
+  std::cout << "Comparing attribute transfer" << std::endl;
+  AttributeTransfer transfer(*cs, *geometry);
+  VertexData<double> data_B(*intTri->intrinsicMesh, Vector<double>::Random(intTri->intrinsicMesh->nVertices()));
+  VertexData<double> data_A_Pointwise = transfer.transferBtoA(data_B, TransferMethod::Pointwise);
+  VertexData<double> data_A_L2 = transfer.transferBtoA(data_B, TransferMethod::L2);
+  Vector<double> truth = transfer.P_B * data_B.toVector();
+  Vector<double> pointwiseA = transfer.P_A * data_A_Pointwise.toVector();
+  Vector<double> L2A = transfer.P_A * data_A_L2.toVector();
+
+  auto pscs = polyscope::registerSurfaceMesh("common subdivision", cs->interpolateAcrossA(geometry->vertexPositions),
+                                             cs->mesh->getFaceVertexList(), polyscopePermutations(*cs->mesh));
+  pscs->addVertexScalarQuantity("truth", truth);
+  pscs->addVertexScalarQuantity("pointwise", pointwiseA);
+  pscs->addVertexScalarQuantity("L2", L2A);
+  psMesh->addVertexScalarQuantity("pointwise", data_A_Pointwise);
+  psMesh->addVertexScalarQuantity("l2", data_A_L2);
+
+  double pointwiseErr = (pointwiseA - truth).dot(transfer.M_CS_Galerkin * (pointwiseA - truth));
+  double L2Err = (L2A - truth).dot(transfer.M_CS_Galerkin * (L2A - truth));
+
+  std::cout << "  pointwise err: " << pointwiseErr << std::endl;
+  std::cout << "  L2 err: " << L2Err << std::endl;
 }
 
 template <typename T>
@@ -428,9 +461,8 @@ void myCallback() {
 
     ImGui::TreePop();
   }
-  if (ImGui::Button("Test interpolation")) {
-    testInterpolation();
-  }
+  if (ImGui::Button("Test interpolation")) testInterpolation();
+  if (ImGui::Button("Test transfer")) testFunctionTransfer();
 
   ImGui::PopItemWidth();
 }
