@@ -132,6 +132,69 @@ void computeCommonSubdivision() {
   std::cout << "\t...done" << std::endl;
 }
 
+void testInterpolation() {
+  if (!cs) computeCommonSubdivision();
+  if (!cs->mesh) {
+    std::cout << "Meshing common subdivision" << std::endl;
+    cs->constructMesh();
+    std::cout << "\t...done" << std::endl;
+  }
+
+  std::cout << "Comparing interpolated edge lengths " << std::endl;
+  // Lengths from extrinsic vertex positions
+  const VertexData<Vector3>& posCS = cs->interpolateAcrossA(geometry->vertexPositions);
+  VertexPositionGeometry csGeo(*cs->mesh, posCS);
+  csGeo.requireEdgeLengths();
+  EdgeData<double> lengthsFromPosA = csGeo.edgeLengths;
+  csGeo.unrequireEdgeLengths();
+
+  // Lengths from extrinsic edge lengths
+  geometry->requireEdgeLengths();
+  const EdgeData<double>& lengthsA = geometry->edgeLengths;
+  EdgeData<double> lengthsFromLenA = cs->interpolateEdgeLengthsA(lengthsA);
+
+  // Lengths from intrinsic edge lengths
+  EdgeData<double> lengthsFromLenB = cs->interpolateEdgeLengthsB(intTri->edgeLengths);
+
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (lengthsFromPosA.toVector() - lengthsFromLenA.toVector()).norm() << std::endl;
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (lengthsFromPosA.toVector() - lengthsFromLenB.toVector()).norm() << std::endl;
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (lengthsFromLenB.toVector() - lengthsFromLenA.toVector()).norm() << std::endl;
+
+  std::cout << "Comparing mass matrices " << std::endl;
+
+  SparseMatrix<double> massMatrixPosA = cs->vertexGalerkinMassMatrixFromPositionsA(geometry->vertexPositions);
+  SparseMatrix<double> massMatrixLenA = cs->vertexGalerkinMassMatrixFromLengthsA(geometry->edgeLengths);
+  SparseMatrix<double> massMatrixLenB = cs->vertexGalerkinMassMatrixFromLengthsB(intTri->edgeLengths);
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (massMatrixPosA - massMatrixLenA).norm() << std::endl;
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (massMatrixPosA - massMatrixLenB).norm() << std::endl;
+  std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
+            << (massMatrixLenB - massMatrixLenA).norm() << std::endl;
+
+  std::cout << "Comparing interpolation matrices " << std::endl;
+  SparseMatrix<double> P_A = cs->interpolationMatrixA();
+  Vector<double> vec_A = Vector<double>::Random(intTri->inputMesh.nVertices());
+  VertexData<double> data_A(intTri->inputMesh, vec_A);
+  VertexData<double> interp_fn_A = cs->interpolateAcrossA(data_A);
+  Vector<double> vec_interp_A = P_A * vec_A;
+  std::cout << "   difference between manual interpolation across A and interpolation matrix: "
+            << (interp_fn_A.toVector() - vec_interp_A).norm() << std::endl;
+
+  SparseMatrix<double> P_B = cs->interpolationMatrixB();
+  Vector<double> vec_B = Vector<double>::Random(intTri->intrinsicMesh->nVertices());
+  VertexData<double> data_B(*intTri->intrinsicMesh, vec_B);
+  VertexData<double> interp_fn_B = cs->interpolateAcrossB(data_B);
+  Vector<double> vec_interp_B = P_B * vec_B;
+  std::cout << "   difference between manual interpolation across B and interpolation matrix: "
+            << (interp_fn_B.toVector() - vec_interp_B).norm() << std::endl;
+
+  geometry->unrequireEdgeLengths();
+}
+
 template <typename T>
 void saveMatrix(std::string filename, SparseMatrix<T>& matrix) {
 
@@ -364,6 +427,9 @@ void myCallback() {
     if (ImGui::Button("interpolate matrix")) outputInterpolatMat();
 
     ImGui::TreePop();
+  }
+  if (ImGui::Button("Test interpolation")) {
+    testInterpolation();
   }
 
   ImGui::PopItemWidth();
