@@ -54,7 +54,7 @@ void updateTriagulationViz() {
 
 
   // Get the edge traces
-  EdgeData<std::vector<SurfacePoint>> traces = intTri->traceEdges();
+  EdgeData<std::vector<SurfacePoint>> traces = intTri->traceAllIntrinsicEdgesAlongInput();
 
   // Convert to 3D positions
   std::vector<std::vector<Vector3>> traces3D(traces.size());
@@ -125,7 +125,7 @@ void refineDelaunayTriangulation() {
 
 void computeCommonSubdivision() {
   std::cout << "Computing common subdivision" << std::endl;
-  cs = intTri->extractCommonSubdivision();
+  intTri->getCommonSubdivision();
   if (withGUI) {
     // TODO: visualize
   }
