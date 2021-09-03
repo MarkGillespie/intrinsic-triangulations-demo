@@ -225,6 +225,11 @@ void testFunctionTransfer() {
 
   std::cout << "  pointwise err: " << pointwiseErr << std::endl;
   std::cout << "  L2 err: " << L2Err << std::endl;
+
+  SparseMatrix<double> lhs, rhs;
+  std::tie(lhs, rhs) = transfer.constructBtoAMatrices();
+  Vector<double> residual = lhs * data_A_L2.toVector() - rhs * data_B.toVector();
+  std::cout << "  residual norm: " << residual.norm() << std::endl;
 }
 
 template <typename T>
