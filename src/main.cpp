@@ -387,6 +387,19 @@ void outputInterpolatMat() {
   saveMatrix("interpolate.spmat", interpMat);
 }
 
+void outputFunctionTransferMat() {
+  AttributeTransfer transfer(intTri->getCommonSubdivision(), *geometry);
+  SparseMatrix<double> AtoB_lhs, AtoB_rhs, BtoA_lhs, BtoA_rhs;
+  std::tie(AtoB_lhs, AtoB_rhs) = transfer.constructAtoBMatrices();
+  std::tie(BtoA_lhs, BtoA_rhs) = transfer.constructBtoAMatrices();
+
+  saveMatrix("InputToIntrinsic_lhs.spmat", AtoB_lhs);
+  saveMatrix("InputToIntrinsic_rhs.spmat", AtoB_rhs);
+
+  saveMatrix("IntrinsicToInput_lhs.spmat", BtoA_lhs);
+  saveMatrix("IntrinsicToInput_rhs.spmat", BtoA_rhs);
+}
+
 void writeLog(const Logger& logger, std::string outputPrefix) {
   std::string logFile = outputPrefix + "stats.tsv";
   bool loggingSuccess = logger.writeLog(logFile);
@@ -457,6 +470,7 @@ void myCallback() {
     if (ImGui::Button("vertex positions")) outputVertexPositions();
     if (ImGui::Button("Laplace matrix")) outputLaplaceMat();
     if (ImGui::Button("interpolate matrix")) outputInterpolatMat();
+    if (ImGui::Button("function transfer matrices")) outputFunctionTransferMat();
 
     ImGui::TreePop();
   }
@@ -492,6 +506,7 @@ int main(int argc, char** argv) {
   args::Flag vertexPositions(output, "vertexPositions", "write the vertex positions for the intrinsic triangulation. name: 'vertexPositions.dmat'", {"vertexPositions"});
   args::Flag laplaceMat(output, "laplaceMat", "write the Laplace-Beltrami matrix for the triangulation. name: 'laplace.spmat'", {"laplaceMat"});
   args::Flag interpolateMat(output, "interpolateMat", "write the matrix which expresses data on the intrinsic vertices as a linear combination of the input vertices. name: 'interpolate.mat'", {"interpolateMat"});
+  args::Flag functionTransferMat(output, "functionTransferMat", "write the linear systems for L2-optimal function transfer between the input and intrinsic triangulations. name: 'InputToIntrinsic_lhs.spmat', 'InputToIntrinsic_rhs.spmat', etc.", {"functionTransferMat"});
   args::Flag logStats(output, "logStats", "write performance statistics. name: 'stats.tsv'", {"logStats"});
   // clang-format on
 
@@ -676,6 +691,7 @@ int main(int argc, char** argv) {
   if (vertexPositions) outputVertexPositions();
   if (laplaceMat) outputLaplaceMat();
   if (interpolateMat) outputInterpolatMat();
+  if (functionTransferMat) outputFunctionTransferMat();
 
   if (logStats) writeLog(logger, outputPrefix);
 
