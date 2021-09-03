@@ -67,7 +67,7 @@ void updateTriagulationViz() {
   }
 
   // Register with polyscope
-  auto graphQ = polyscope::getSurfaceMesh()->addSurfaceGraphQuantity("intrinsic edges", traces3D);
+  auto graphQ = psMesh->addSurfaceGraphQuantity("intrinsic edges", traces3D);
   graphQ->setEnabled(true);
 }
 
@@ -125,9 +125,14 @@ void refineDelaunayTriangulation() {
 
 void computeCommonSubdivision() {
   std::cout << "Computing common subdivision" << std::endl;
-  intTri->getCommonSubdivision();
+  CommonSubdivision& cs = intTri->getCommonSubdivision();
+  cs.constructMesh();
   if (withGUI) {
-    // TODO: visualize
+    VertexData<Vector3> subdivisionPositions = cs.interpolateAcrossA(geometry->vertexPositions);
+    FaceData<double> colors = cs.copyFromB(niceColors(cs.meshB));
+    polyscope::SurfaceMesh* psSub =
+        polyscope::registerSurfaceMesh("common subdivision", subdivisionPositions, cs.mesh->getFaceVertexList());
+    psSub->addFaceScalarQuantity("coloring", colors)->setColorMap("spectral")->setEnabled(true);
   }
   std::cout << "\t...done" << std::endl;
 }
@@ -469,6 +474,10 @@ void myCallback() {
     ImGui::TreePop();
   }
 
+  if (ImGui::Button("Construct common subdivision")) {
+    computeCommonSubdivision();
+  }
+
   if (ImGui::TreeNode("Output")) {
 
     if (ImGui::Button("intrinsic faces")) outputIntrinsicFaces();
@@ -606,7 +615,7 @@ int main(int argc, char** argv) {
     for (Vertex v : mesh->vertices()) {
       vBasisX[v] = geometry->vertexTangentBasis[v][0];
     }
-    polyscope::getSurfaceMesh()->setVertexTangentBasisX(vBasisX);
+    psMesh->setVertexTangentBasisX(vBasisX);
 
     // Set face tangent spaces
     geometry->requireFaceTangentBasis();
@@ -614,7 +623,7 @@ int main(int argc, char** argv) {
     for (Face f : mesh->faces()) {
       fBasisX[f] = geometry->faceTangentBasis[f][0];
     }
-    polyscope::getSurfaceMesh()->setFaceTangentBasisX(fBasisX);
+    psMesh->setFaceTangentBasisX(fBasisX);
 
     // Nice defaults
     psMesh->setEdgeWidth(1.0);
