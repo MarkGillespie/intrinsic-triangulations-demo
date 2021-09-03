@@ -129,10 +129,16 @@ void computeCommonSubdivision() {
   cs.constructMesh();
   if (withGUI) {
     VertexData<Vector3> subdivisionPositions = cs.interpolateAcrossA(geometry->vertexPositions);
-    FaceData<double> colors = cs.copyFromB(niceColors(cs.meshB));
     polyscope::SurfaceMesh* psSub =
         polyscope::registerSurfaceMesh("common subdivision", subdivisionPositions, cs.mesh->getFaceVertexList());
-    psSub->addFaceScalarQuantity("coloring", colors)->setColorMap("spectral")->setEnabled(true);
+
+    // colors from intrinsic mesh
+    FaceData<double> colorsIntrinsic = cs.copyFromB(niceColors(cs.meshB));
+    psSub->addFaceScalarQuantity("coloring, intrinsic", colorsIntrinsic)->setColorMap("spectral")->setEnabled(true);
+
+    // colors from input mesh
+    FaceData<double> colorsInput = cs.copyFromA(niceColors(cs.meshA));
+    psSub->addFaceScalarQuantity("coloring, input", colorsInput)->setColorMap("spectral");
   }
   std::cout << "\t...done" << std::endl;
 }
@@ -231,6 +237,7 @@ void testFunctionTransfer() {
   std::cout << "  pointwise err: " << pointwiseErr << std::endl;
   std::cout << "  L2 err: " << L2Err << std::endl;
 
+  // TODO FIXME NOT COMPILING
   SparseMatrix<double> lhs, rhs;
   std::tie(lhs, rhs) = transfer.constructBtoAMatrices();
   Vector<double> residual = lhs * data_A_L2.toVector() - rhs * data_B.toVector();
