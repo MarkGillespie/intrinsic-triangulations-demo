@@ -201,6 +201,7 @@ void testInterpolation() {
 }
 
 void testFunctionTransfer() {
+  computeCommonSubdivision();
   CommonSubdivision& cs = intTri->getCommonSubdivision();
   if (!cs.mesh) {
     std::cout << "Meshing common subdivision" << std::endl;
@@ -217,8 +218,7 @@ void testFunctionTransfer() {
   Vector<double> pointwiseA = transfer.P_A * data_A_Pointwise.toVector();
   Vector<double> L2A = transfer.P_A * data_A_L2.toVector();
 
-  auto pscs = polyscope::registerSurfaceMesh("common subdivision", cs.interpolateAcrossA(geometry->vertexPositions),
-                                             cs.mesh->getFaceVertexList(), polyscopePermutations(*cs.mesh));
+  auto pscs = polyscope::getSurfaceMesh("common subdivision");
   pscs->addVertexScalarQuantity("truth", truth);
   pscs->addVertexScalarQuantity("pointwise", pointwiseA);
   pscs->addVertexScalarQuantity("L2", L2A);
