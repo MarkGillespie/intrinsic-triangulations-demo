@@ -239,6 +239,7 @@ void testFunctionTransfer() {
 
 template <typename T>
 void saveMatrix(std::string filename, SparseMatrix<T>& matrix) {
+  filename = outputPrefix + filename;
 
   // WARNING: this follows matlab convention and thus is 1-indexed
 
@@ -269,6 +270,7 @@ void saveMatrix(std::string filename, SparseMatrix<T>& matrix) {
 
 template <typename T>
 void saveMatrix(std::string filename, DenseMatrix<T>& matrix) {
+  filename = outputPrefix + filename;
 
   std::cout << "Writing dense matrix to: " << filename << std::endl;
 
@@ -334,16 +336,12 @@ void outputIntrinsicFaces() {
 }
 
 void outputVertexPositions() {
-  // TODO
-  throw std::runtime_error("not implemented");
-
-  /*
   intTri->requireVertexIndices();
 
   size_t nV = intTri->mesh.nVertices();
   DenseMatrix<double> vertexPositions(nV, 3);
 
-  VertexData<Vector3> intrinsicPositions = intTri->sampleAtInput(geometry->inputVertexPositions);
+  VertexData<Vector3> intrinsicPositions = intTri->sampleFromInput(geometry->inputVertexPositions);
 
   size_t iV = 0;
   for (Vertex v : intTri->mesh.vertices()) {
@@ -355,7 +353,6 @@ void outputVertexPositions() {
   }
 
   saveMatrix("vertexPositions.dmat", vertexPositions);
-  */
 }
 
 void outputLaplaceMat() {
