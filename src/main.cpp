@@ -23,7 +23,6 @@ using namespace geometrycentral::surface;
 std::unique_ptr<ManifoldSurfaceMesh> mesh;
 std::unique_ptr<VertexPositionGeometry> geometry;
 std::unique_ptr<IntrinsicTriangulation> intTri;
-std::unique_ptr<CommonSubdivision> cs;
 
 // Polyscope visualization handle, to quickly add data to the surface
 bool withGUI = true;
@@ -55,7 +54,7 @@ void updateTriagulationViz() {
 
 
   // Get the edge traces
-  EdgeData<std::vector<SurfacePoint>> traces = intTri->traceEdges();
+  EdgeData<std::vector<SurfacePoint>> traces = intTri->traceAllIntrinsicEdgesAlongInput();
 
   // Convert to 3D positions
   std::vector<std::vector<Vector3>> traces3D(traces.size());
@@ -126,7 +125,7 @@ void refineDelaunayTriangulation() {
 
 void computeCommonSubdivision() {
   std::cout << "Computing common subdivision" << std::endl;
-  cs = intTri->extractCommonSubdivision();
+  intTri->getCommonSubdivision();
   if (withGUI) {
     // TODO: visualize
   }
@@ -134,17 +133,17 @@ void computeCommonSubdivision() {
 }
 
 void testInterpolation() {
-  if (!cs) computeCommonSubdivision();
-  if (!cs->mesh) {
+  CommonSubdivision& cs = intTri->getCommonSubdivision();
+  if (!cs.mesh) {
     std::cout << "Meshing common subdivision" << std::endl;
-    cs->constructMesh();
+    cs.constructMesh();
     std::cout << "\t...done" << std::endl;
   }
 
   std::cout << "Comparing interpolated edge lengths " << std::endl;
   // Lengths from extrinsic vertex positions
-  const VertexData<Vector3>& posCS = cs->interpolateAcrossA(geometry->vertexPositions);
-  VertexPositionGeometry csGeo(*cs->mesh, posCS);
+  const VertexData<Vector3>& posCS = cs.interpolateAcrossA(geometry->vertexPositions);
+  VertexPositionGeometry csGeo(*cs.mesh, posCS);
   csGeo.requireEdgeLengths();
   EdgeData<double> lengthsFromPosA = csGeo.edgeLengths;
   csGeo.unrequireEdgeLengths();
@@ -152,10 +151,10 @@ void testInterpolation() {
   // Lengths from extrinsic edge lengths
   geometry->requireEdgeLengths();
   const EdgeData<double>& lengthsA = geometry->edgeLengths;
-  EdgeData<double> lengthsFromLenA = cs->interpolateEdgeLengthsA(lengthsA);
+  EdgeData<double> lengthsFromLenA = cs.interpolateEdgeLengthsA(lengthsA);
 
   // Lengths from intrinsic edge lengths
-  EdgeData<double> lengthsFromLenB = cs->interpolateEdgeLengthsB(intTri->edgeLengths);
+  EdgeData<double> lengthsFromLenB = cs.interpolateEdgeLengthsB(intTri->edgeLengths);
 
   std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
             << (lengthsFromPosA.toVector() - lengthsFromLenA.toVector()).norm() << std::endl;
@@ -166,9 +165,9 @@ void testInterpolation() {
 
   std::cout << "Comparing mass matrices " << std::endl;
 
-  SparseMatrix<double> massMatrixPosA = cs->vertexGalerkinMassMatrixFromPositionsA(geometry->vertexPositions);
-  SparseMatrix<double> massMatrixLenA = cs->vertexGalerkinMassMatrixFromLengthsA(geometry->edgeLengths);
-  SparseMatrix<double> massMatrixLenB = cs->vertexGalerkinMassMatrixFromLengthsB(intTri->edgeLengths);
+  SparseMatrix<double> massMatrixPosA = cs.vertexGalerkinMassMatrixFromPositionsA(geometry->vertexPositions);
+  SparseMatrix<double> massMatrixLenA = cs.vertexGalerkinMassMatrixFromLengthsA(geometry->edgeLengths);
+  SparseMatrix<double> massMatrixLenB = cs.vertexGalerkinMassMatrixFromLengthsB(intTri->edgeLengths);
   std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
             << (massMatrixPosA - massMatrixLenA).norm() << std::endl;
   std::cout << "   difference between interpolation from positionsA vs from lengthsA : "
@@ -177,18 +176,18 @@ void testInterpolation() {
             << (massMatrixLenB - massMatrixLenA).norm() << std::endl;
 
   std::cout << "Comparing interpolation matrices " << std::endl;
-  SparseMatrix<double> P_A = cs->interpolationMatrixA();
+  SparseMatrix<double> P_A = cs.interpolationMatrixA();
   Vector<double> vec_A = Vector<double>::Random(intTri->inputMesh.nVertices());
   VertexData<double> data_A(intTri->inputMesh, vec_A);
-  VertexData<double> interp_fn_A = cs->interpolateAcrossA(data_A);
+  VertexData<double> interp_fn_A = cs.interpolateAcrossA(data_A);
   Vector<double> vec_interp_A = P_A * vec_A;
   std::cout << "   difference between manual interpolation across A and interpolation matrix: "
             << (interp_fn_A.toVector() - vec_interp_A).norm() << std::endl;
 
-  SparseMatrix<double> P_B = cs->interpolationMatrixB();
+  SparseMatrix<double> P_B = cs.interpolationMatrixB();
   Vector<double> vec_B = Vector<double>::Random(intTri->intrinsicMesh->nVertices());
   VertexData<double> data_B(*intTri->intrinsicMesh, vec_B);
-  VertexData<double> interp_fn_B = cs->interpolateAcrossB(data_B);
+  VertexData<double> interp_fn_B = cs.interpolateAcrossB(data_B);
   Vector<double> vec_interp_B = P_B * vec_B;
   std::cout << "   difference between manual interpolation across B and interpolation matrix: "
             << (interp_fn_B.toVector() - vec_interp_B).norm() << std::endl;
@@ -197,15 +196,15 @@ void testInterpolation() {
 }
 
 void testFunctionTransfer() {
-  if (!cs) computeCommonSubdivision();
-  if (!cs->mesh) {
+  CommonSubdivision& cs = intTri->getCommonSubdivision();
+  if (!cs.mesh) {
     std::cout << "Meshing common subdivision" << std::endl;
-    cs->constructMesh();
+    cs.constructMesh();
     std::cout << "\t...done" << std::endl;
   }
 
   std::cout << "Comparing attribute transfer" << std::endl;
-  AttributeTransfer transfer(*cs, *geometry);
+  AttributeTransfer transfer(cs, *geometry);
   VertexData<double> data_B(*intTri->intrinsicMesh, Vector<double>::Random(intTri->intrinsicMesh->nVertices()));
   VertexData<double> data_A_Pointwise = transfer.transferBtoA(data_B, TransferMethod::Pointwise);
   VertexData<double> data_A_L2 = transfer.transferBtoA(data_B, TransferMethod::L2);
@@ -213,8 +212,8 @@ void testFunctionTransfer() {
   Vector<double> pointwiseA = transfer.P_A * data_A_Pointwise.toVector();
   Vector<double> L2A = transfer.P_A * data_A_L2.toVector();
 
-  auto pscs = polyscope::registerSurfaceMesh("common subdivision", cs->interpolateAcrossA(geometry->vertexPositions),
-                                             cs->mesh->getFaceVertexList(), polyscopePermutations(*cs->mesh));
+  auto pscs = polyscope::registerSurfaceMesh("common subdivision", cs.interpolateAcrossA(geometry->vertexPositions),
+                                             cs.mesh->getFaceVertexList(), polyscopePermutations(*cs.mesh));
   pscs->addVertexScalarQuantity("truth", truth);
   pscs->addVertexScalarQuantity("pointwise", pointwiseA);
   pscs->addVertexScalarQuantity("L2", L2A);
@@ -652,17 +651,18 @@ int main(int argc, char** argv) {
     // compute common subdivision
     std::clock_t start = std::clock();
     computeCommonSubdivision();
+    CommonSubdivision& cs = intTri->getCommonSubdivision();
     double duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) {
       logger.log("commonSubdivisionTracingDuration", duration);
-      logger.log("commonSubdivisionVertices", cs->nVertices());
+      logger.log("commonSubdivisionVertices", cs.nVertices());
       writeLog(logger, outputPrefix);
     }
 
     // extract mesh of common subdivision
     start = std::clock();
     std::cout << "Constructing common subdivision mesh" << std::endl;
-    cs->constructMesh();
+    cs.constructMesh();
     std::cout << "\t...done" << std::endl;
     duration = (std::clock() - start) / (double)CLOCKS_PER_SEC;
     if (logStats) {
