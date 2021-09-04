@@ -422,6 +422,37 @@ void writeLog(const Logger& logger, std::string outputPrefix) {
   }
 }
 
+void outputCommonSubdivision() {
+  CommonSubdivision& cs = intTri->getCommonSubdivision();
+  if (!cs.mesh) cs.constructMesh();
+
+  // Pack miscellaneous data into obj file normals
+  // x = index of input parent vertex (-1 for vertices not in input mesh)
+  // y = index of input parent face
+  // z = index of intrinsic parent face
+
+  VertexData<size_t> vIdxA = intTri->inputMesh.getVertexIndices();
+  FaceData<size_t> fIdxA = intTri->inputMesh.getFaceIndices();
+  FaceData<size_t> fIdxB = intTri->intrinsicMesh->getFaceIndices();
+
+  CornerData<Vector3> cornerData(*cs.mesh);
+  for (Corner c : cs.mesh->corners()) {
+    cornerData[c].x = -1;
+    if (cs.sourcePoints[c.vertex()]->posA.type == SurfacePointType::Vertex) {
+      cornerData[c].x = vIdxA[cs.sourcePoints[c.vertex()]->posA.vertex];
+    }
+    cornerData[c].y = fIdxA[cs.sourceFaceA[c.face()]];
+    cornerData[c].z = fIdxB[cs.sourceFaceB[c.face()]];
+  }
+
+
+  VertexPositionGeometry csGeo(*cs.mesh, cs.interpolateAcrossA(geometry->vertexPositions));
+
+  std::string filename = outputPrefix + "common_subdivision.obj";
+  std::cout << "Writing obj: " << filename << std::endl;
+  WavefrontOBJ::write(filename, csGeo, cornerData);
+}
+
 void myCallback() {
 
   ImGui::PushItemWidth(100);
@@ -489,6 +520,7 @@ void myCallback() {
     if (ImGui::Button("Laplace matrix")) outputLaplaceMat();
     if (ImGui::Button("interpolate matrix")) outputInterpolatMat();
     if (ImGui::Button("function transfer matrices")) outputFunctionTransferMat();
+    if (ImGui::Button("common subdivision")) outputCommonSubdivision();
 
     ImGui::TreePop();
   }
@@ -525,6 +557,7 @@ int main(int argc, char** argv) {
   args::Flag laplaceMat(output, "laplaceMat", "write the Laplace-Beltrami matrix for the triangulation. name: 'laplace.spmat'", {"laplaceMat"});
   args::Flag interpolateMat(output, "interpolateMat", "write the matrix which expresses data on the intrinsic vertices as a linear combination of the input vertices. name: 'interpolate.mat'", {"interpolateMat"});
   args::Flag functionTransferMat(output, "functionTransferMat", "write the linear systems for L2-optimal function transfer between the input and intrinsic triangulations. name: 'InputToIntrinsic_lhs.spmat', 'InputToIntrinsic_rhs.spmat', etc.", {"functionTransferMat"});
+  args::Flag commonSubdivision(output, "commonSubdivision", "write the common subdivision to an obj file. name: 'common_subdivision.obj'.", {"commonSubdivision"});
   args::Flag logStats(output, "logStats", "write performance statistics. name: 'stats.tsv'", {"logStats"});
   // clang-format on
 
@@ -710,6 +743,7 @@ int main(int argc, char** argv) {
   if (laplaceMat) outputLaplaceMat();
   if (interpolateMat) outputInterpolatMat();
   if (functionTransferMat) outputFunctionTransferMat();
+  if (commonSubdivision) outputCommonSubdivision();
 
   if (logStats) writeLog(logger, outputPrefix);
 
