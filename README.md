@@ -61,3 +61,6 @@ InputToIntrinsic_lhs * x = InputToIntrinsic_rhs * f_input.
 
 #### Statistics
 If the `--logStats` flag is set, the executable will log performance statistics to `stats.tsv`. These include the mesh name, the number of vertices and minimum angle in the input mesh, the number of vertices and minimum angle in the computed intrinsic mesh, the number of vertices in the common subdivision, and how long it took to compute the common subdivision.
+
+#### Benchmarking
+Helper scripts for running this code on a dataset can be found in [benchmark](benchmark).
