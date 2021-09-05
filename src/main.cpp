@@ -147,13 +147,13 @@ void computeCommonSubdivision() {
 template <typename T>
 void outputMatrix(std::string filename, SparseMatrix<T>& matrix) {
   std::cout << "Writing sparse matrix to: " << filename << std::endl;
-  saveMatrix(outputPrefix + filename, matrix);
+  saveSparseMatrix(outputPrefix + filename, matrix);
 }
 
 template <typename T>
 void outputMatrix(std::string filename, DenseMatrix<T>& matrix) {
   std::cout << "Writing dense matrix to: " << filename << std::endl;
-  saveMatrix(outputPrefix + filename, matrix);
+  saveDenseMatrix(outputPrefix + filename, matrix);
 }
 
 void outputIntrinsicFaces() {
