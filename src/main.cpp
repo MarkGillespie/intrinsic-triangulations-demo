@@ -96,16 +96,6 @@ void flipDelaunayTriangulation() {
 }
 
 void refineDelaunayTriangulation() {
-
-  if (mesh->hasBoundary()) {
-    // TODO: get rid of this message?
-    if (withGUI) {
-      polyscope::error("Support for refining meshes with boundary is experimental; proceed with caution!");
-    } else {
-      std::cout << "Support for refining meshes with boundary is experimental; proceed with caution!" << std::endl;
-    }
-  }
-
   // Manage optional parameters
   double sizeParam = useRefineSizeThresh ? refineToSize : std::numeric_limits<double>::infinity();
   size_t maxInsertions = useInsertionsMax ? insertionsMax : INVALID_IND;
@@ -116,8 +106,7 @@ void refineDelaunayTriangulation() {
   intTri->delaunayRefine(refineDegreeThresh, sizeParam, maxInsertions);
 
   if (!intTri->isDelaunay()) {
-    polyscope::warning(
-        "Failed to make mesh Delaunay with flips & refinement. Bug Nick to finish porting implementation.");
+    polyscope::warning("Failed to make mesh Delaunay with flips & refinement.");
   }
 
   updateTriagulationViz();
