@@ -1,5 +1,7 @@
 # intrinsic-triangulations-demo
 
+Demo code for Integer Coordinates for Intrinsic Geometry Processing.
+
 Our core intrinsic triangulation data structures are implemented in [geometry-central](http://geometry-central.net). This is a simple appliction which loads a mesh, computes an intrinsic triangulation, and visualizes its edges.  Additionally, the code can be invoked from the command line to output data about the intrinsic triangulation in easily-parseable formats.  In this library, the resulting `IntrinsicTriangulation` class can be used with all geometry routines in geometry-central. 
 
 ### Building and running

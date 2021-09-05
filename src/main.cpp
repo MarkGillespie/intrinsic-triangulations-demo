@@ -38,8 +38,8 @@ bool useInsertionsMax;
 int insertionsMax = -2;
 
 // Mesh stats
-bool signpostIsDelaunay = true;
-float signpostMinAngleDeg = 0.;
+bool intTriIsDelaunay = true;
+float intTriMinValidAngleDeg = 0.;
 
 // Output options
 std::string outputPrefix;
@@ -50,9 +50,8 @@ void updateTriagulationViz() {
   }
 
   // Update stats
-  signpostIsDelaunay = intTri->isDelaunay();
-  signpostMinAngleDeg = intTri->minAngleDegrees();
-
+  intTriIsDelaunay = intTri->isDelaunay();
+  intTriMinValidAngleDeg = intTri->minAngleDegreesAtValidFaces(60);
 
   // Get the edge traces
   EdgeData<std::vector<SurfacePoint>> traces = intTri->traceAllIntrinsicEdgesAlongInput();
@@ -83,16 +82,16 @@ void resetTriangulation() {
   updateTriagulationViz();
 }
 
-
 void flipDelaunayTriangulation() {
   std::cout << "Flipping triangulation to Delaunay" << std::endl;
   intTri->flipToDelaunay();
 
   if (!intTri->isDelaunay()) {
-    polyscope::warning("woah, failed to make mesh Delaunay with flips");
+    polyscope::warning("Failed to make mesh Delaunay with flips");
   }
 
   updateTriagulationViz();
+  std::cout << "\t...done" << std::endl;
 }
 
 void refineDelaunayTriangulation() {
@@ -265,32 +264,11 @@ void writeLog(const Logger& logger, std::string outputPrefix) {
 void outputCommonSubdivision() {
   CommonSubdivision& cs = intTri->getCommonSubdivision();
   if (!cs.mesh) cs.constructMesh();
-
-  // Pack miscellaneous data into obj file normals
-  // x = index of input parent vertex (-1 for vertices not in input mesh)
-  // y = index of input parent face
-  // z = index of intrinsic parent face
-
-  VertexData<size_t> vIdxA = intTri->inputMesh.getVertexIndices();
-  FaceData<size_t> fIdxA = intTri->inputMesh.getFaceIndices();
-  FaceData<size_t> fIdxB = intTri->intrinsicMesh->getFaceIndices();
-
-  CornerData<Vector3> cornerData(*cs.mesh);
-  for (Corner c : cs.mesh->corners()) {
-    cornerData[c].x = -1;
-    if (cs.sourcePoints[c.vertex()]->posA.type == SurfacePointType::Vertex) {
-      cornerData[c].x = vIdxA[cs.sourcePoints[c.vertex()]->posA.vertex];
-    }
-    cornerData[c].y = fIdxA[cs.sourceFaceA[c.face()]];
-    cornerData[c].z = fIdxB[cs.sourceFaceB[c.face()]];
-  }
-
-
   VertexPositionGeometry csGeo(*cs.mesh, cs.interpolateAcrossA(geometry->vertexPositions));
 
   std::string filename = outputPrefix + "common_subdivision.obj";
   std::cout << "Writing obj: " << filename << std::endl;
-  WavefrontOBJ::write(filename, csGeo, cornerData);
+  writeSurfaceMesh(*cs.mesh, csGeo, filename);
 }
 
 void myCallback() {
@@ -313,10 +291,10 @@ void myCallback() {
 
   ImGui::TextUnformatted("Intrinsic triangulation:");
   ImGui::Text("  nVertices = %lu  nFaces = %lu", intTri->mesh.nVertices(), intTri->mesh.nFaces());
-  if (signpostIsDelaunay) {
-    ImGui::Text("  is Delaunay: yes  min angle = %.2f degrees", signpostMinAngleDeg);
+  if (intTriIsDelaunay) {
+    ImGui::Text("  is Delaunay: yes | min valid angle = %.2f degrees", intTriMinValidAngleDeg);
   } else {
-    ImGui::Text("  is Delaunay: no   min angle = %.2f degrees", signpostMinAngleDeg);
+    ImGui::Text("  is Delaunay: no  | min valid angle = %.2f degrees", intTriMinValidAngleDeg);
   }
 
   if (ImGui::Button("reset triangulation")) {
