@@ -1,3 +1,4 @@
+#include "geometrycentral/numerical/linear_algebra_utilities.h" // saveMatrix
 #include "geometrycentral/surface/integer_coordinates_intrinsic_triangulation.h"
 #include "geometrycentral/surface/manifold_surface_mesh.h"
 #include "geometrycentral/surface/meshio.h"
@@ -216,6 +217,8 @@ void testFunctionTransfer() {
   }
 
   std::cout << "Comparing attribute transfer" << std::endl;
+
+  // test intrinsic->input
   AttributeTransfer transfer(cs, *geometry);
   VertexData<double> data_B(*intTri->intrinsicMesh, Vector<double>::Random(intTri->intrinsicMesh->nVertices()));
   VertexData<double> data_A_Pointwise = transfer.transferBtoA(data_B, TransferMethod::Pointwise);
@@ -242,67 +245,35 @@ void testFunctionTransfer() {
   std::tie(lhs, rhs) = transfer.constructBtoAMatrices();
   Vector<double> residual = lhs * data_A_L2.toVector() - rhs * data_B.toVector();
   std::cout << "  residual norm: " << residual.norm() << std::endl;
+
+  // test input->intrinsic
+  VertexData<double> data_A =
+      VertexData<double>(intTri->inputMesh, Vector<double>::Random(intTri->inputMesh.nVertices()));
+  VertexData<double> pointwiseB = transfer.transferAtoB_Pointwise(data_A);
+  VertexData<double> L2B = transfer.transferAtoB_L2(data_A);
+  std::cout << "  input->intrinsic err: " << (pointwiseB.toVector() - L2B.toVector()).norm() << std::endl;
+  Vector<double> vA = data_A.toVector();
+  Vector<double> vP = pointwiseB.toVector();
+  Vector<double> vL = L2B.toVector();
+  SparseMatrix<double>& PA = transfer.P_A;
+  SparseMatrix<double>& PB = transfer.P_B;
+  SparseMatrix<double>& M = transfer.M_CS_Galerkin;
+
+  std::tie(lhs, rhs) = transfer.constructAtoBMatrices();
+  residual = lhs * vL - rhs * vA;
+  std::cout << "  residual norm: " << residual.norm() << std::endl;
 }
 
 template <typename T>
-void saveMatrix(std::string filename, SparseMatrix<T>& matrix) {
-  filename = outputPrefix + filename;
-
-  // WARNING: this follows matlab convention and thus is 1-indexed
-
+void outputMatrix(std::string filename, SparseMatrix<T>& matrix) {
   std::cout << "Writing sparse matrix to: " << filename << std::endl;
-
-  std::ofstream outFile(filename);
-  if (!outFile) {
-    throw std::runtime_error("failed to open output file " + filename);
-  }
-
-  // Write a comment on the first line giving the dimensions
-  outFile << "# sparse " << matrix.rows() << " " << matrix.cols() << std::endl;
-
-  outFile << std::setprecision(16);
-
-  for (int k = 0; k < matrix.outerSize(); ++k) {
-    for (typename SparseMatrix<T>::InnerIterator it(matrix, k); it; ++it) {
-      T val = it.value();
-      size_t iRow = it.row();
-      size_t iCol = it.col();
-
-      outFile << (iRow + 1) << " " << (iCol + 1) << " " << val << std::endl;
-    }
-  }
-
-  outFile.close();
+  saveMatrix(outputPrefix + filename, matrix);
 }
 
 template <typename T>
-void saveMatrix(std::string filename, DenseMatrix<T>& matrix) {
-  filename = outputPrefix + filename;
-
+void outputMatrix(std::string filename, DenseMatrix<T>& matrix) {
   std::cout << "Writing dense matrix to: " << filename << std::endl;
-
-  std::ofstream outFile(filename);
-  if (!outFile) {
-    throw std::runtime_error("failed to open output file " + filename);
-  }
-
-  // Write a comment on the first line giving the dimensions
-  outFile << "# dense " << matrix.rows() << " " << matrix.cols() << std::endl;
-
-  outFile << std::setprecision(16);
-
-  for (size_t iRow = 0; iRow < (size_t)matrix.rows(); iRow++) {
-    for (size_t iCol = 0; iCol < (size_t)matrix.cols(); iCol++) {
-      T val = matrix(iRow, iCol);
-      outFile << val;
-      if (iCol + 1 != (size_t)matrix.cols()) {
-        outFile << " ";
-      }
-    }
-    outFile << std::endl;
-  }
-
-  outFile.close();
+  saveMatrix(outputPrefix + filename, matrix);
 }
 
 void outputIntrinsicFaces() {
@@ -338,8 +309,8 @@ void outputIntrinsicFaces() {
     iF++;
   }
 
-  saveMatrix("faceInds.dmat", faceInds);
-  saveMatrix("faceLengths.dmat", faceLengths);
+  outputMatrix("faceInds.dmat", faceInds);
+  outputMatrix("faceLengths.dmat", faceLengths);
 }
 
 void outputVertexPositions() {
@@ -359,12 +330,12 @@ void outputVertexPositions() {
     iV++;
   }
 
-  saveMatrix("vertexPositions.dmat", vertexPositions);
+  outputMatrix("vertexPositions.dmat", vertexPositions);
 }
 
 void outputLaplaceMat() {
   intTri->requireCotanLaplacian();
-  saveMatrix("laplace.spmat", intTri->cotanLaplacian);
+  outputMatrix("laplace.spmat", intTri->cotanLaplacian);
 }
 
 void outputInterpolatMat() {
@@ -398,7 +369,7 @@ void outputInterpolatMat() {
   interpMat.setFromTriplets(triplets.begin(), triplets.end());
   interpMat.makeCompressed();
 
-  saveMatrix("interpolate.spmat", interpMat);
+  outputMatrix("interpolate.spmat", interpMat);
 }
 
 void outputFunctionTransferMat() {
@@ -407,11 +378,11 @@ void outputFunctionTransferMat() {
   std::tie(AtoB_lhs, AtoB_rhs) = transfer.constructAtoBMatrices();
   std::tie(BtoA_lhs, BtoA_rhs) = transfer.constructBtoAMatrices();
 
-  saveMatrix("InputToIntrinsic_lhs.spmat", AtoB_lhs);
-  saveMatrix("InputToIntrinsic_rhs.spmat", AtoB_rhs);
+  outputMatrix("InputToIntrinsic_lhs.spmat", AtoB_lhs);
+  outputMatrix("InputToIntrinsic_rhs.spmat", AtoB_rhs);
 
-  saveMatrix("IntrinsicToInput_lhs.spmat", BtoA_lhs);
-  saveMatrix("IntrinsicToInput_rhs.spmat", BtoA_rhs);
+  outputMatrix("IntrinsicToInput_lhs.spmat", BtoA_lhs);
+  outputMatrix("IntrinsicToInput_rhs.spmat", BtoA_rhs);
 }
 
 void writeLog(const Logger& logger, std::string outputPrefix) {
@@ -451,6 +422,135 @@ void outputCommonSubdivision() {
   std::string filename = outputPrefix + "common_subdivision.obj";
   std::cout << "Writing obj: " << filename << std::endl;
   WavefrontOBJ::write(filename, csGeo, cornerData);
+}
+
+void testAllOutputs() {
+  CommonSubdivision& cs = intTri->getCommonSubdivision();
+
+  // === Dump outputs
+  outputIntrinsicFaces();
+  outputVertexPositions();
+  outputLaplaceMat();
+  outputInterpolatMat();
+  outputFunctionTransferMat();
+  outputCommonSubdivision();
+
+  // === Read outputs back in
+  DenseMatrix<size_t> faceInds = loadDenseMatrix<size_t>(outputPrefix + "faceInds.dmat");
+  DenseMatrix<double> faceLengths = loadDenseMatrix<double>(outputPrefix + "faceLengths.dmat");
+
+  DenseMatrix<double> vertexPositions = loadDenseMatrix<double>(outputPrefix + "vertexPositions.dmat");
+
+  SparseMatrix<double> L = loadSparseMatrix<double>(outputPrefix + "laplace.spmat");
+  SparseMatrix<double> interpMat = loadSparseMatrix<double>(outputPrefix + "interpolate.spmat");
+
+  SparseMatrix<double> BtoA_lhs = loadSparseMatrix<double>(outputPrefix + "IntrinsicToInput_lhs.spmat");
+  SparseMatrix<double> BtoA_rhs = loadSparseMatrix<double>(outputPrefix + "IntrinsicToInput_rhs.spmat");
+  SparseMatrix<double> AtoB_lhs = loadSparseMatrix<double>(outputPrefix + "InputToIntrinsic_lhs.spmat");
+  SparseMatrix<double> AtoB_rhs = loadSparseMatrix<double>(outputPrefix + "InputToIntrinsic_rhs.spmat");
+
+  std::unique_ptr<ManifoldSurfaceMesh> csMesh;
+  std::unique_ptr<VertexPositionGeometry> csGeo;
+  std::tie(csMesh, csGeo) = readManifoldSurfaceMesh(outputPrefix + "common_subdivision.obj");
+
+  // === Compare outputs with true values
+  bool indsOkay = true;
+  bool lengthsOkay = true;
+
+  size_t iF = 0;
+  VertexData<size_t> vIdx = intTri->intrinsicMesh->getVertexIndices();
+
+  for (Face f : intTri->intrinsicMesh->faces()) {
+    std::array<size_t, 3> inds{vIdx[f.halfedge().vertex()], vIdx[f.halfedge().next().vertex()],
+                               vIdx[f.halfedge().next().next().vertex()]};
+    std::array<double, 3> lengths{intTri->edgeLengths[f.halfedge().edge()],
+                                  intTri->edgeLengths[f.halfedge().next().edge()],
+                                  intTri->edgeLengths[f.halfedge().next().next().edge()]};
+
+    if (inds[0] != faceInds(iF, 0) || inds[1] != faceInds(iF, 1) || inds[2] != faceInds(iF, 2)) {
+      std::cout << "Face index error: " << std::endl;
+      std::cout << "    mesh face indices: " << inds[0] << ", " << inds[1] << ", " << inds[2] << std::endl;
+      std::cout << "   saved face indices: " << faceInds(iF, 0) << ", " << faceInds(iF, 1) << ", " << faceInds(iF, 2)
+                << std::endl;
+      indsOkay = false;
+    }
+
+    if (abs(lengths[0] - faceLengths(iF, 0)) > 1e-8 || abs(lengths[1] - faceLengths(iF, 1)) > 1e-8 ||
+        abs(lengths[2] - faceLengths(iF, 2)) > 1e-8) {
+      std::cout << "Face length error: " << std::endl;
+      std::cout << "    mesh face lengths: " << lengths[0] << ", " << lengths[1] << ", " << lengths[2] << std::endl;
+      std::cout << "   saved face legnths: " << faceLengths(iF, 0) << ", " << faceLengths(iF, 1) << ", "
+                << faceLengths(iF, 2) << std::endl;
+      lengthsOkay = false;
+    }
+    iF++;
+  }
+  if (indsOkay) std::cout << "intrinsic indices okay" << std::endl;
+  if (lengthsOkay) std::cout << "intrinsic lengths okay" << std::endl;
+
+  bool positionsOkay = true;
+  VertexData<Vector3> positions = intTri->sampleFromInput(geometry->inputVertexPositions);
+  size_t iV = 0;
+  for (Vertex v : intTri->intrinsicMesh->vertices()) {
+    Vector3 p = positions[v];
+    Vector3 pFile{vertexPositions(iV, 0), vertexPositions(iV, 1), vertexPositions(iV, 2)};
+    if ((p - pFile).norm() > 1e-8) {
+      std::cout << "Vertex position error:" << std::endl;
+      std::cout << "     mesh vertex positions: " << p << std::endl;
+      std::cout << "    saved vertex positions: " << pFile << std::endl;
+      positionsOkay = false;
+    }
+
+    iV++;
+  }
+  if (lengthsOkay) std::cout << "intrinsic vertex positions okay" << std::endl;
+
+  intTri->requireCotanLaplacian();
+  SparseMatrix<double> trueL = intTri->cotanLaplacian;
+  if ((L - trueL).norm() < 1e-8) {
+    std::cout << "laplace okay" << std::endl;
+  } else {
+    std::cout << "laplace error :'( " << (L - trueL).norm() << std::endl;
+  }
+  intTri->unrequireCotanLaplacian();
+
+
+  Vector<double> randInputData = Vector<double>::Random(intTri->inputMesh.nVertices());
+  Vector<double> intrinsicData = interpMat * randInputData;
+  VertexData<double> randInputDataData(intTri->inputMesh, randInputData);
+  Vector<double> trueIntrinsicData = intTri->sampleFromInput(randInputDataData).toVector();
+  if (randInputData.norm() < 1) {
+    std::cout << "... interpolating 0? test might not be informative" << std::endl;
+  }
+  if ((intrinsicData - trueIntrinsicData).norm() < 1e-8) {
+    std::cout << "interpmat okay" << std::endl;
+  } else {
+    std::cout << "interpmat error :'( " << (intrinsicData - trueIntrinsicData).norm() << std::endl;
+  }
+
+  bool optimalTransferOkay = true;
+  AttributeTransfer transfer(*intTri);
+  // AtoB
+  Vector<double> rhs = AtoB_rhs * randInputData;
+  Vector<double> projectedIntrinsicData = solveSquare(AtoB_lhs, rhs);
+  Vector<double> trueProjectedIntrinsicData = transfer.transferAtoB_L2(randInputDataData).toVector();
+  if ((projectedIntrinsicData - trueProjectedIntrinsicData).norm() > 1e-8) {
+    std::cout << " input -> intrinsic err " << (projectedIntrinsicData - trueProjectedIntrinsicData).norm()
+              << std::endl;
+    optimalTransferOkay = false;
+  }
+
+  // BtoA
+  Vector<double> randIntrinsicData = Vector<double>::Random(intTri->intrinsicMesh->nVertices());
+  rhs = BtoA_rhs * randIntrinsicData;
+  Vector<double> transferred = solveSquare(BtoA_lhs, rhs);
+  Vector<double> trueTransferred =
+      transfer.transferBtoA_L2(VertexData<double>(*intTri->intrinsicMesh, randIntrinsicData)).toVector();
+  if ((transferred - trueTransferred).norm() > 1e-8) {
+    std::cout << " intrinsic -> input err " << (transferred - trueTransferred).norm() << std::endl;
+    optimalTransferOkay = false;
+  }
+  if (optimalTransferOkay) std::cout << "transfer okay" << std::endl;
 }
 
 void myCallback() {
@@ -526,6 +626,7 @@ void myCallback() {
   }
   if (ImGui::Button("Test interpolation")) testInterpolation();
   if (ImGui::Button("Test transfer")) testFunctionTransfer();
+  if (ImGui::Button("Test outputs")) testAllOutputs();
 
   ImGui::PopItemWidth();
 }
