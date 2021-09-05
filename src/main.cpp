@@ -350,7 +350,7 @@ int main(int argc, char** argv) {
 
   // Configure the argument parser
   // clang-format off
-  args::ArgumentParser parser("A demo of Navigating Intrinsic Triangulations");
+  args::ArgumentParser parser("A demo of Integer Coordinates for Intrinsic Geometry Processing");
   args::HelpFlag help(parser, "help", "Display this help message", {'h', "help"});
   args::Positional<std::string> inputFilename(parser, "mesh", "A .obj or .ply mesh file.");
 
