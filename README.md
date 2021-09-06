@@ -10,7 +10,7 @@ Our core intrinsic triangulation data structures are implemented in [geometry-ce
 
 On unix-like machines, use:
 ```
-git clone --recurse-submodules https://github.com/nmwsharp/intrinsic-triangulations-demo.git
+git clone --recurse-submodules https://github.com/MarkGillespie/intrinsic-triangulations-demo.git
 cd intrinsic-triangulations-demo
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
