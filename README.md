@@ -3,7 +3,9 @@
 C++ demo code and application for [Integer Coordinates for Intrinsic Geometry Processing](https://arxiv.org/pdf/2106.00220.pdf) [Mark Gillespie](https://markjgillespie.com), [Nicholas Sharp](https://nmwsharp.com/) and [Keenan Crane](http://keenan.is/here) at SIGGRAPH Asia 2021.
 
 PDF: [preprint](https://arxiv.org/pdf/2106.00220.pdf)
+
 Project: coming soon!
+
 Talk: coming soon!
 
 ![intrinsic Delaunay refinement of Thingi10k model 50108](media/screenshot.png)
