@@ -1,6 +1,6 @@
 # intrinsic-triangulations-demo
 
-C++ demo code and application for [Integer Coordinates for Intrinsic Geometry Processing](https://arxiv.org/pdf/2106.00220.pdf) [Mark Gillespie](https://markjgillespie.com), [Nicholas Sharp](https://nmwsharp.com/) and [Keenan Crane](http://keenan.is/here) at SIGGRAPH Asia 2021.
+C++ demo code and application for [Integer Coordinates for Intrinsic Geometry Processing](https://arxiv.org/pdf/2106.00220.pdf) [Mark Gillespie](https://markjgillespie.com), [Nicholas Sharp](https://nmwsharp.com/) and [Keenan Crane](http://keenan.is/here).
 
 PDF: [preprint](https://arxiv.org/pdf/2106.00220.pdf)
 Project: coming soon!
