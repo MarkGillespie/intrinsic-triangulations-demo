@@ -4,9 +4,9 @@ C++ demo code and application for [Integer Coordinates for Intrinsic Geometry Pr
 
 PDF: [preprint](https://arxiv.org/pdf/2106.00220.pdf)
 
-Project: coming soon!
+Project: [https://markjgillespie.com/Research/integer-coordinates/index.html](https://markjgillespie.com/Research/integer-coordinates/index.html)
 
-Talk: coming soon!
+Talk: [20 minute version](https://youtu.be/3czWJxSmCuc), [5 minute version](https://youtu.be/a4sgxoZRSCk), [45 second version](https://youtu.be/0ZN79VqGMaI)
 
 ![intrinsic Delaunay refinement of Thingi10k model 50108](media/screenshot.png)
 
